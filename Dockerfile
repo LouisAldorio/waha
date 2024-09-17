@@ -88,7 +88,7 @@ COPY package.json ./
 COPY --from=build /src/node_modules ./node_modules
 COPY --from=build /src/dist ./dist
 COPY --from=dashboard /dashboard ./dist/dashboard
-COPY entrypoint.sh /entrypoint.sh
+COPY entrypoint.sh ./entrypoint.sh
 
 # Chokidar options to monitor file changes
 ENV CHOKIDAR_USEPOLLING=1
@@ -99,4 +99,4 @@ ENV WAHA_ZIPPER=ZIPUNZIP
 
 # Run command, etc
 EXPOSE 3000
-CMD ["/entrypoint.sh"]
+CMD ["/bin/sh", "entrypoint.sh"]
