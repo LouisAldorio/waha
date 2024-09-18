@@ -10,7 +10,7 @@ const Database = require('better-sqlite3');
 
 export class LocalStoreCore extends LocalStore {
   protected readonly baseDirectory: string = path.join(
-    "/app/.sessions",
+    "/app/sessions",
     'waha-sessions',
   );
 

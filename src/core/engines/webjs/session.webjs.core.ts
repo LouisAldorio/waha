@@ -3,6 +3,7 @@ import {
   WAHAInternalEvent,
   WhatsappSession,
 } from '@waha/core/abc/session.abc';
+import { EngineConfigService } from '@waha/core/config/EngineConfigService';
 import { WebjsClient } from '@waha/core/engines/webjs/WebjsClient';
 import {
   AvailableInPlusVersion,
@@ -58,6 +59,7 @@ import { MeInfo } from '@waha/structures/sessions.dto';
 import { WAMessageRevokedBody } from '@waha/structures/webhooks.dto';
 import { waitUntil } from '@waha/utils/promiseTimeout';
 import { SingleDelayedJobRunner } from '@waha/utils/SingleDelayedJobRunner';
+import { getEngineName } from '@waha/version';
 import {
   Call,
   Channel as WEBJSChannel,
@@ -67,11 +69,14 @@ import {
   Events,
   GroupChat,
   Label as WEBJSLabel,
+  LocalAuth,
   Location,
   Message,
   Reaction,
 } from 'whatsapp-web.js';
 import { Message as MessageInstance } from 'whatsapp-web.js/src/structures';
+
+import { LocalStoreCore } from '../../storage/LocalStoreCore';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const QRCode = require('qrcode');
@@ -92,7 +97,11 @@ export class WhatsappSessionWebJSCore extends WhatsappSession {
   whatsapp: WebjsClient;
   protected qr: QR;
 
-  public constructor(config) {
+  private localStore: LocalStoreCore
+
+  public constructor(
+    config,
+  ) {
     super(config);
     this.qr = new QR();
     this.shouldRestart = true;
@@ -103,6 +112,8 @@ export class WhatsappSessionWebJSCore extends WhatsappSession {
       this.START_ATTEMPT_DELAY_SECONDS * SECOND,
       this.logger,
     );
+
+    this.localStore = new LocalStoreCore(this.engine);
   }
 
   /**
@@ -130,6 +141,10 @@ export class WhatsappSessionWebJSCore extends WhatsappSession {
         // path: path,
         // strict: true,
       },
+      authStrategy: new LocalAuth({
+        clientId: this.engine,
+        dataPath: this.localStore.getSessionDirectory(this.name),
+      }),
     };
   }
 
@@ -385,7 +400,7 @@ export class WhatsappSessionWebJSCore extends WhatsappSession {
     const message = this.recreateMessage(messageId);
     const options = {
       // It's fine to sent just ids instead of Contact object
-      mentions: request.mentions as unknown as string[],
+      mentions: (request.mentions as unknown) as string[],
     };
     return message.edit(request.text, options);
   }
